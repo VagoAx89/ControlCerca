@@ -1,0 +1,23 @@
+
+{
+  "name": "Control de Cerca Eléctrica",
+  "short_name": "Cerca",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "./esp32test.html",
+  "background_color": "#ffffff",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/cercas.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/cercas.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

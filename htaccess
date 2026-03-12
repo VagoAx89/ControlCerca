@@ -1,0 +1,71 @@
+# ============================================
+# CONFIGURACIÓN APACHE PARA PWA
+# ============================================
+
+# Habilitar rewrite engine
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+</IfModule>
+
+# ============================================
+# TIPOS MIME CORRECTOS
+# ============================================
+<IfModule mod_mime.c>
+    # Manifest
+    AddType application/manifest+json .webmanifest .json
+    
+    # Service Worker
+    AddType application/javascript .js
+    
+    # Fuentes
+    AddType font/woff2 .woff2
+    AddType font/woff .woff
+</IfModule>
+
+# ============================================
+# HEADERS DE CACHE
+# ============================================
+<IfModule mod_headers.c>
+    # Service Worker - NO cachear para que se actualice
+    <FilesMatch "service-worker\.js$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires 0
+    </FilesMatch>
+    
+    # Manifest - Cache por 1 hora
+    <FilesMatch "manifest\.json$">
+        Header set Cache-Control "public, max-age=3600"
+    </FilesMatch>
+    
+    # Imágenes - Cache por 1 semana
+    <FilesMatch "\.(jpg|jpeg|png|gif|svg|webp)$">
+        Header set Cache-Control "public, max-age=604800"
+    </FilesMatch>
+    
+    # HTML - Cache por 1 hora
+    <FilesMatch "\.html$">
+        Header set Cache-Control "public, max-age=3600"
+    </FilesMatch>
+</IfModule>
+
+# ============================================
+# COMPRESIÓN GZIP
+# ============================================
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE application/manifest+json
+</IfModule>
+
+# ============================================
+# FORZAR HTTPS (Opcional)
+# ============================================
+# Descomenta estas líneas si quieres forzar HTTPS
+# <IfModule mod_rewrite.c>
+#     RewriteEngine On
+#     RewriteCond %{HTTPS} off
+#     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# </IfModule>
