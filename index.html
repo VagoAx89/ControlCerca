@@ -414,6 +414,15 @@
         // Messaging
         const messaging = getMessaging(app);
 
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                alert("Token copiado al portapapeles");
+            } catch (err) {
+                console.error("Error copiando:", err);
+            }
+        }
+
         async function initNotifications() {
 
             const permission = await Notification.requestPermission();
@@ -440,14 +449,7 @@
                 serviceWorkerRegistration: registration
             });
 
-            async function copyToClipboard(text) {
-                try {
-                    await navigator.clipboard.writeText(text);
-                    alert("Token copiado al portapapeles");
-                } catch (err) {
-                    console.error("Error copiando:", err);
-                }
-            }
+
 
             if (token) {
                 console.log("Token FCM:", token);
