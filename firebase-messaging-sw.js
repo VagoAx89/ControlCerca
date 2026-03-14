@@ -1,5 +1,9 @@
-importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js");
+importScripts(
+  "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js",
+);
+importScripts(
+  "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js",
+);
 
 firebase.initializeApp({
   apiKey: "AIzaSyB4MxzITRJUg0xRvIWQPpFo-FLtUgzo3Ls",
@@ -7,18 +11,19 @@ firebase.initializeApp({
   projectId: "cercaselectricas-a52a4",
   storageBucket: "cercaselectricas-a52a4.appspot.com",
   messagingSenderId: "829613948603",
-  appId: "1:829613948603:android:01cd8f6bab0225a311f39e"
+  appId: "1:829613948603:android:01cd8f6bab0225a311f39e",
 });
 
 const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage(function(payload) {
+messaging.onBackgroundMessage(function (payload) {
+  console.log("Push recibido:", payload);
 
-  console.log("Notificación en background:", payload);
+  const title = payload.notification?.title || "Alerta";
+  const body = payload.notification?.body || "Evento detectado";
 
-  self.registration.showNotification(payload.notification.title, {
-    body: payload.notification.body,
-    icon: "/cercas.png"
+  self.registration.showNotification(title, {
+    body: body,
+    icon: "/cercas.png",
   });
-
 });
