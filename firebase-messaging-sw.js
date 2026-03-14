@@ -19,11 +19,11 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage(function (payload) {
   console.log("Push recibido:", payload);
 
-  const title = payload.notification?.title || "Alerta";
-  const body = payload.notification?.body || "Evento detectado";
+  if (!payload.notification) return;
 
-  self.registration.showNotification(title, {
-    body: body,
-    icon: "/cercas.png",
+  self.registration.showNotification(payload.notification.title, {
+    body: payload.notification.body,
+    icon: "/intec_app_icons/icon-white-512.png",
+    badge: "/intec_app_icons/icon-white-144.png",
   });
 });
