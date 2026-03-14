@@ -16,14 +16,31 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// self.registration.showNotification("⚡ Cerca activada", {
+//   body: "Zona 2 detectó voltaje",
+//   icon: "/intec_app_icons/icon-white-512.png",
+//  badge: "/intec_app_icons/icon-white-144.png",
+//   vibrate: [200,100,200],
+//   tag: "alerta-cerca",
+//   requireInteraction: true
+// });
+
 messaging.onBackgroundMessage(function (payload) {
   console.log("Push recibido:", payload);
 
   if (!payload.notification) return;
 
-  self.registration.showNotification(payload.notification.title, {
+  self.registration.showNotification("Control de cercas", {
     body: payload.notification.body,
     icon: "/intec_app_icons/icon-white-512.png",
     badge: "/intec_app_icons/icon-white-144.png",
+    vibrate: [200, 100, 200],
+    tag: "alerta-cerca",
   });
+});
+
+self.addEventListener("notificationclick", function (event) {
+  event.notification.close();
+
+  event.waitUntil(clients.openWindow("/"));
 });
