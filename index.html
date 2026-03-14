@@ -440,6 +440,15 @@
                 serviceWorkerRegistration: registration
             });
 
+            async function copyToClipboard(text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    alert("Token copiado al portapapeles");
+                } catch (err) {
+                    console.error("Error copiando:", err);
+                }
+            }
+
             if (token) {
                 console.log("Token FCM:", token);
                 copyToClipboard(token);
