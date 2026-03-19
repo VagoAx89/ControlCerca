@@ -42,5 +42,9 @@ messaging.onBackgroundMessage(function (payload) {
 self.addEventListener("notificationclick", function (event) {
   event.notification.close();
 
-  event.waitUntil(clients.openWindow("/"));
+  // event.waitUntil(clients.openWindow("/"));
+  const url =
+    event.notification.data?.url || "https://vagoax89.github.io/ControlCerca/";
+
+  event.waitUntil(clients.openWindow(url));
 });
