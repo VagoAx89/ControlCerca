@@ -23,7 +23,52 @@
     <link rel="icon" type="image/png" href="cercas.png">
 </head>
 
+
+
 <body>
+
+    <!-- ══ MODAL CREAR CUENTA ══ -->
+    <div id="modalCuenta" class="fancy-alert">
+        <div class="fancy-box" style="width:320px;">
+
+            <h3 style="margin-bottom:10px;">Crear cuenta</h3>
+
+            <div class="form-group">
+                <label>ID de dispositivo</label>
+                <div class="input-wrap">
+                    <input type="text" id="regDevice" placeholder="Ej: 4A-2F-9B">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <div class="input-wrap">
+                    <input type="email" id="regEmail" placeholder="usuario@email.com">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-wrap">
+                    <input type="password" id="regPass" placeholder="••••••••">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Repetir password</label>
+                <div class="input-wrap">
+                    <input type="password" id="regPass2" placeholder="••••••••">
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:15px;">
+
+                <button class="btn-ghost" onclick="cerrarModal()">Cancelar</button>
+                <button class="btn-ghost" onclick="crearCuenta()">Crear</button>
+            </div>
+
+        </div>
+    </div>
 
     <div class="phone">
         <!-- ══ LOGIN SCREEN ══ -->
@@ -62,20 +107,16 @@
                     </div>
                 </div>
 
-                <button class="btn-primary" onclick="login()">
+                <button class="btn-primary" id="loginBtn">
                     <div class="btn-ripple"></div>
                     Ingresar
                 </button>
 
                 <div class="divider"><span>o</span></div>
 
-                <button class="btn-ghost">Crear cuenta nueva</button>
+                <button class="btn-ghost" id="btnCuenta" onclick="openModalCntr()">Crear cuenta nueva</button>
                 <div class="forgot-link">¿Olvidaste tu contraseña?</div>
 
-
-
-                <textarea id="tokenBox" style="width:100%; height:120px;"></textarea>
-                <button id="copyBtn">Copiar Token</button>
             </div>
         </div>
 
@@ -350,12 +391,26 @@
         }
 
         .fancy-box button {
-            padding: 6px 15px;
+            /* padding: 6px 15px;
             border: none;
-            background: #e53935;
-            color: white;
+            background: #ffffff;
+            color: rgb(49, 86, 216);
             border-radius: 6px;
+            cursor: pointer; */
+            width: 100%;
+            padding: 13px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            color: var(--text);
+            font-family: var(--sans);
+            font-size: 13px;
+            font-weight: 600;
             cursor: pointer;
+            margin-bottom: 10px;
+            transition:
+                border-color 0.2s,
+                color 0.2s;
         }
 
         @keyframes pop {
@@ -386,6 +441,8 @@
         import { getMessaging, getToken, onMessage }
             from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
+        import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
         const firebaseConfig = {
             apiKey: "AIzaSyB4MxzITRJUg0xRvIWQPpFo-FLtUgzo3Ls",
             authDomain: "cercaselectricas-a52a4.firebaseapp.com",
@@ -401,6 +458,7 @@
         const database = getDatabase(app);
 
         // globals
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
         window.db = database;
         window.ref = ref;
         window.set = set;
@@ -410,89 +468,201 @@
         window.orderByChild = orderByChild;
         window.equalTo = equalTo;
         window.get = get;
-
+        window.app = app;
         window.auth = auth;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+
+        window.onMessage = onMessage;
+        window.getMessaging = getMessaging;
+        window.getToken = getToken;
+        let uid = null;
+        let deviceId = null;
 
         // Messaging
         const messaging = getMessaging(app);
 
-        document.getElementById("copyBtn").addEventListener("click", () => {
-
-            const box = document.getElementById("tokenBox");
-
-            box.select();
-            box.setSelectionRange(0, 99999);
-
-            document.execCommand("copy");
-
-            alert("Token copiado");
-
-        });
-
         async function initNotifications() {
-
             const permission = await Notification.requestPermission();
 
             if (permission !== "granted") {
                 console.log("Permiso de notificaciones denegado");
                 console.log("No se pudo obtener token");
-                showToast(
-                    "token denegado",
-                    "algo malo paso",
-                    "warning",
-                );
+                showToast("token denegado", "algo malo paso", "warning");
                 return;
             }
 
             console.log("Permiso concedido");
 
-            const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+            const registration = await navigator.serviceWorker.register(
+                "./firebase-messaging-sw.js",
+            );
 
             console.log("Service Worker registrado");
 
             const token = await getToken(messaging, {
-                vapidKey: "BAdTKFU7wgAzEqAUXqtUmKB9EiuWK9tr95uX2ZJaKdwHbcbSuLAJrUUdKAcBHlUSMrE2tQbkTpLSnyP-9EKfNHs",
-                serviceWorkerRegistration: registration
+                vapidKey:
+                    "BAdTKFU7wgAzEqAUXqtUmKB9EiuWK9tr95uX2ZJaKdwHbcbSuLAJrUUdKAcBHlUSMrE2tQbkTpLSnyP-9EKfNHs",
+                serviceWorkerRegistration: registration,
             });
-
-
 
             if (token) {
                 console.log("Token FCM:", token);
-                const box = document.getElementById("tokenBox");
-                console.log("box ");
-                box.value = token;
-                showToast(
-                    "token obtenido",
-                    token,
-                    "warning",
-                );
+
+                // showToast(
+                //     "token obtenido",
+                //     token,
+                //     "warning",
+                // );
 
                 // aquí puedes guardarlo en firebase
                 // devices/{deviceId}/tokens/{token}
-
+                const tokensRef = ref(db, `devices/${deviceId}/tokens`);
+                await push(tokensRef, token);
             } else {
                 console.log("No se pudo obtener token");
-                showToast(
-                    "token denegado",
-                    "algo malo paso",
-                    "warning",
-                );
+                showToast("token denegado", "algo malo paso", "warning");
             }
-
         }
 
-        // iniciar notificaciones
-        initNotifications();
-
         onMessage(messaging, (payload) => {
-
             console.log("Notificación recibida:", payload);
 
             alert(payload.notification.title + " - " + payload.notification.body);
-
         });
+        document.getElementById("loginBtn").addEventListener("click", login);
+        // Login
+        async function login() {
+            if (false) {
+                document.getElementById("loginScreen").classList.remove("active");
+                document.getElementById("mainScreen").classList.add("active");
+                showTab("controles", null, true);
+                return;
+            }
+            try {
+                const email = document.getElementById("emailInput").value;
+                const password = document.getElementById("passInput").value;
+                if (!email || !password) {
+                    showToast(
+                        "Campos incompletos",
+                        "Por favor, completa todos los campos.",
+                        "warning",
+                    );
+                    return;
+                }
+                const userCredential = await window.signInWithEmailAndPassword(
+                    window.auth,
+                    email,
+                    password,
+                );
+
+                uid = userCredential.user.uid;
+                console.log("Usuario autenticado:", uid);
+                deviceId = await checkUserDevice(uid);
+                //console.log("ID de dispositivo obtenido:", deviceId);
+                // if (!deviceId) {
+                //   openRegisterDeviceModal(); // Mostrar modal
+                //   return;
+                // }
+                //console.log("Dispositivo registrado para este usuario:", deviceId);
+                // Si sí existe:
+                window.currentDeviceId = deviceId;
+                //ahora iniciar la obtencion del token para las notificaciones push que esta en el index.html, esto es para que se actualice el token cada vez que el usuario inicie sesión, esto es importante porque el token puede cambiar y si no se actualiza no se recibirán las notificaciones push
+                // iniciar notificaciones
+                console.log("Device ID:", deviceId);
+                initNotifications();
+
+                initControlsListener();
+                initActivityListener();
+                // iniciarStatusListener(deviceId);
+
+                document.getElementById("loginScreen").classList.remove("active");
+                document.getElementById("mainScreen").classList.add("active");
+                showTab("controles", null, true);
+                document.getElementById("DeviceName").textContent =
+                    "Dispositivo: " + deviceId;
+                document.getElementById("statusText").textContent = "Cargando estado...";
+                document.getElementById("configDevice").placeholder = deviceId;
+            } catch (error) {
+                console.error("Error:", error.message);
+                //fancyMessageBox("Credenciales incorrectas papu 🔐");
+                showToast(
+                    "Error de inicio de sesión",
+                    "Verifica tus credenciales",
+                    "warning",
+                );
+            }
+        }
+
+        //Funcion para cargar los datos iniciales de los controles
+        function initControlsListener() {
+            //console.log("Inicializando listener de controles...");
+
+            const controlsRef = window.ref(
+                db,
+                "devices/" + window.currentDeviceId + "/controls",
+            );
+
+            window.onValue(controlsRef, (snapshot) => {
+                // console.log("Datos de controles actualizados:", snapshot.val());
+                const data = snapshot.val();
+                // console.log("Datos recibidos:", data);
+                if (!data) return;
+                console.log(
+                    "Estado actual - Cerca:",
+                    data.electricFence,
+                    "Alarma:",
+                    data.sonicAlarm,
+                );
+                // Actualizar switches
+                document.getElementById("toggle-cerca").checked = data.electricFence;
+                document.getElementById("toggle-alarma").checked = data.sonicAlarm;
+
+                updateCardState(
+                    "cerca",
+                    document.getElementById("card-cerca"),
+                    data.electricFence,
+                );
+                updateCardState(
+                    "alarma",
+                    document.getElementById("card-alarma"),
+                    data.sonicAlarm,
+                );
+            });
+        }
+
+        //Funcion para cargar los datos de actividad
+        function initActivityListener() {
+            const eventsRef = window.ref(
+                db,
+                "devices/" + window.currentDeviceId + "/events",
+            );
+
+            window.onValue(eventsRef, (snapshot) => {
+                const container = document.getElementById("actividad");
+                container.innerHTML = '<div class="section-label">Últimos eventos</div>';
+
+                const data = snapshot.val();
+                if (!data) return;
+
+                const eventsArray = Object.entries(data)
+                    .map(([id, value]) => ({ id, ...value }))
+                    .sort((a, b) => b.timestamp - a.timestamp);
+
+                eventsArray.forEach((event) => {
+                    const date = new Date(event.timestamp);
+                    const formatted = date.toLocaleString();
+
+                    container.innerHTML += `
+        <div class="config-row">
+          <div>
+            <div class="config-row-label">${event.message}</div>
+            <div class="config-row-sub">${formatted}</div>
+          </div>
+        </div>
+      `;
+                });
+            });
+        }
 
 
 

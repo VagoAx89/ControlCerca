@@ -24,65 +24,6 @@ function closeFancy() {
   document.getElementById("fancyAlert").style.display = "none";
 }
 
-// Login
-async function login() {
-  if (false) {
-    document.getElementById("loginScreen").classList.remove("active");
-    document.getElementById("mainScreen").classList.add("active");
-    showTab("controles", null, true);
-    return;
-  }
-  try {
-    const email = document.getElementById("emailInput").value;
-    const password = document.getElementById("passInput").value;
-    if (!email || !password) {
-      showToast(
-        "Campos incompletos",
-        "Por favor, completa todos los campos.",
-        "warning",
-      );
-      return;
-    }
-    const userCredential = await window.signInWithEmailAndPassword(
-      window.auth,
-      email,
-      password,
-    );
-
-    const uid = userCredential.user.uid;
-    console.log("Usuario autenticado:", uid);
-    deviceId = await checkUserDevice(uid);
-    console.log("ID de dispositivo obtenido:", deviceId);
-    if (!deviceId) {
-      openRegisterDeviceModal(); // Mostrar modal
-      return;
-    }
-    //console.log("Dispositivo registrado para este usuario:", deviceId);
-    // Si sí existe:
-    window.currentDeviceId = deviceId;
-
-    initControlsListener();
-    initActivityListener();
-    // iniciarStatusListener(deviceId);
-
-    document.getElementById("loginScreen").classList.remove("active");
-    document.getElementById("mainScreen").classList.add("active");
-    showTab("controles", null, true);
-    document.getElementById("DeviceName").textContent =
-      "Dispositivo: " + deviceId;
-    document.getElementById("statusText").textContent = "Cargando estado...";
-    document.getElementById("configDevice").placeholder = deviceId;
-  } catch (error) {
-    console.error("Error:", error.message);
-    //fancyMessageBox("Credenciales incorrectas papu 🔐");
-    showToast(
-      "Error de inicio de sesión",
-      "Verifica tus credenciales",
-      "warning",
-    );
-  }
-}
-
 function iniciarStatusListener(deviceId) {
   const statusRef = window.ref(window.db, `devices/${deviceId}/status`);
   const badge = document.getElementById("statusBadge");
@@ -141,6 +82,72 @@ function openRegisterDeviceModal() {
       registerDevice(result.value);
     }
   });
+}
+
+// abrir modal
+function openModalCntr() {
+  console.log("Abriendo modal de cuenta...");
+  document.getElementById("modalCuenta").style.display = "flex";
+}
+// cerrar modal
+function cerrarModal() {
+  document.getElementById("modalCuenta").style.display = "none";
+}
+
+// validar y crear cuenta
+async function crearCuenta() {
+  const device = document.getElementById("regDevice").value.trim();
+  const email = document.getElementById("regEmail").value.trim();
+  const pass = document.getElementById("regPass").value.trim();
+  const pass2 = document.getElementById("regPass2").value.trim();
+
+  if (!device || !email || !pass || !pass2) {
+    mostrarError("Todos los campos son obligatorios");
+    return;
+  }
+
+  if (pass !== pass2) {
+    mostrarError("Las contraseñas no coinciden");
+    return;
+  }
+
+  try {
+    // 🔐 1. Crear usuario
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      pass,
+    );
+
+    const uid = userCredential.user.uid;
+
+    console.log("Usuario creado:", uid);
+
+    // 🗄️ 2. Crear estructura en DB
+    await set(ref(db, "devices/" + device), {
+      ownerUid: uid,
+      controls: {
+        electricFence: false,
+        sonicAlarm: false,
+      },
+      status: "offline",
+      events: {},
+    });
+
+    showToast("Cuenta creada", "Dispositivo vinculado", "success");
+
+    cerrarModal();
+  } catch (error) {
+    console.error(error);
+
+    mostrarError(error.message);
+  }
+}
+
+// reutilizamos tu fancy alert
+function mostrarError(msg) {
+  document.getElementById("fancyText").innerText = msg;
+  document.getElementById("fancyAlert").style.display = "flex";
 }
 
 //Función para registrar el dispositivo en Firebase
@@ -215,77 +222,6 @@ async function checkUserDevice(uid) {
   }
 }
 
-//Funcion para cargar los datos iniciales de los controles
-function initControlsListener() {
-  //console.log("Inicializando listener de controles...");
-
-  const controlsRef = window.ref(
-    db,
-    "devices/" + window.currentDeviceId + "/controls",
-  );
-
-  window.onValue(controlsRef, (snapshot) => {
-    // console.log("Datos de controles actualizados:", snapshot.val());
-    const data = snapshot.val();
-    // console.log("Datos recibidos:", data);
-    if (!data) return;
-    console.log(
-      "Estado actual - Cerca:",
-      data.electricFence,
-      "Alarma:",
-      data.sonicAlarm,
-    );
-    // Actualizar switches
-    document.getElementById("toggle-cerca").checked = data.electricFence;
-    document.getElementById("toggle-alarma").checked = data.sonicAlarm;
-
-    updateCardState(
-      "cerca",
-      document.getElementById("card-cerca"),
-      data.electricFence,
-    );
-    updateCardState(
-      "alarma",
-      document.getElementById("card-alarma"),
-      data.sonicAlarm,
-    );
-  });
-}
-
-//Funcion para cargar los datos de actividad
-function initActivityListener() {
-  const eventsRef = window.ref(
-    db,
-    "devices/" + window.currentDeviceId + "/events",
-  );
-
-  window.onValue(eventsRef, (snapshot) => {
-    const container = document.getElementById("actividad");
-    container.innerHTML = '<div class="section-label">Últimos eventos</div>';
-
-    const data = snapshot.val();
-    if (!data) return;
-
-    const eventsArray = Object.entries(data)
-      .map(([id, value]) => ({ id, ...value }))
-      .sort((a, b) => b.timestamp - a.timestamp);
-
-    eventsArray.forEach((event) => {
-      const date = new Date(event.timestamp);
-      const formatted = date.toLocaleString();
-
-      container.innerHTML += `
-        <div class="config-row">
-          <div>
-            <div class="config-row-label">${event.message}</div>
-            <div class="config-row-sub">${formatted}</div>
-          </div>
-        </div>
-      `;
-    });
-  });
-}
-
 // Tabs
 function showTab(tabName, clickedBtn, fromNav) {
   // Hide all tabs
@@ -351,6 +287,8 @@ async function toggleControl(name) {
   });
 
   //  console.log("Estado actualizado correctamente");
+  //En esta linea invoco al console para que pueda imprimir el error en caso de que no se actualice el estado del control, esto es para depuración y no debería afectar la funcionalidad de la app
+  console.log("Control toggled:", name, checkbox.checked);
 }
 
 function updateCardState(name, card, isActive) {
