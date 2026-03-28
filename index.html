@@ -506,18 +506,32 @@
             });
 
             if (token) {
-                console.log("Token FCM:", token);
+                // console.log("Token FCM:", token);
 
-                // showToast(
-                //     "token obtenido",
-                //     token,
-                //     "warning",
-                // );
 
-                // aquí puedes guardarlo en firebase
-                // devices/{deviceId}/tokens/{token}
                 const tokensRef = ref(db, `devices/${deviceId}/tokens`);
-                await push(tokensRef, token);
+
+                // 🔍 1. Leer tokens actuales
+                const snapshot = await get(tokensRef);
+                const data = snapshot.val();
+
+                let existe = false;
+
+                if (data) {
+                    const tokensArray = Object.values(data);
+
+                    // 🔍 2. Verificar si ya existe
+                    existe = tokensArray.includes(token);
+                }
+
+                // 💾 3. Guardar solo si no existe
+                if (!existe) {
+                    await push(tokensRef, token);
+                    console.log("Token guardado");
+                } else {
+                    console.log("Token ya existe, no se guarda");
+                }
+
             } else {
                 console.log("No se pudo obtener token");
                 showToast("token denegado", "algo malo paso", "warning");
@@ -527,7 +541,7 @@
         onMessage(messaging, (payload) => {
             console.log("Notificación recibida:", payload);
 
-            alert(payload.notification.title + " - " + payload.notification.body);
+            //  alert(payload.notification.title + " - " + payload.notification.body);
         });
         document.getElementById("loginBtn").addEventListener("click", login);
         // Login
@@ -556,7 +570,7 @@
                 );
 
                 uid = userCredential.user.uid;
-                console.log("Usuario autenticado:", uid);
+                //console.log("Usuario autenticado:", uid);
                 deviceId = await checkUserDevice(uid);
                 //console.log("ID de dispositivo obtenido:", deviceId);
                 // if (!deviceId) {
@@ -568,7 +582,7 @@
                 window.currentDeviceId = deviceId;
                 //ahora iniciar la obtencion del token para las notificaciones push que esta en el index.html, esto es para que se actualice el token cada vez que el usuario inicie sesión, esto es importante porque el token puede cambiar y si no se actualiza no se recibirán las notificaciones push
                 // iniciar notificaciones
-                console.log("Device ID:", deviceId);
+                //console.log("Device ID:", deviceId);
                 initNotifications();
 
                 initControlsListener();
